@@ -1,20 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using windowsauth.ap.Middlewares;
+using windowsauth.ap.Handlers;
 
 namespace windowsauth.ap
 {
@@ -30,24 +22,21 @@ namespace windowsauth.ap
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(o =>
                 {
                     o.TokenValidationParameters = new TokenValidationParameters
                     {
                         NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier",
-
                         ValidateIssuer = true,
                         ValidIssuer = "issuer",
-
                         ValidateAudience = false,
-
                         ValidateLifetime = true,
-
                         ValidateIssuerSigningKey = false,
-
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("1234567890123456"))
                     };
+                    o.SecurityTokenValidators.Add(new CustomJwtSecurityTokenHandler(services.BuildServiceProvider()));
                 });
             services.AddControllers();
         }
@@ -63,8 +52,6 @@ namespace windowsauth.ap
             app.UseHttpsRedirection();
 
             app.UseAuthentication();
-
-            app.UseMiddleware<JwtValidationMiddleware>();
 
             app.UseRouting();
 
